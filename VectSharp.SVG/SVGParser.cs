@@ -3048,6 +3048,8 @@ namespace VectSharp.SVG
                double x2;
                double y2;
 
+               LinearGradientBrush.SpreadMethods spreadMethod = LinearGradientBrush.SpreadMethods.Pad;
+
                if (!(gradient.HasAttribute("x1") && double.TryParse(gradient.GetAttribute("x1"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out x1)))
                {
                   x1 = 0;
@@ -3066,6 +3068,19 @@ namespace VectSharp.SVG
                if (!(gradient.HasAttribute("y2") && double.TryParse(gradient.GetAttribute("y2"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out y2)))
                {
                   y2 = 0;
+               }
+
+               if (gradient.HasAttribute("spreadMethod"))
+               {
+                  string spreadMeth = gradient.GetAttribute("spreadMethod").ToLowerInvariant();
+                  if(spreadMeth=="reflect")
+                  {
+                     spreadMethod = LinearGradientBrush.SpreadMethods.Reflect;
+                  }
+                  else if (spreadMeth == "repeat")
+                  {
+                     spreadMethod = LinearGradientBrush.SpreadMethods.Repeat;
+                  }
                }
 
                List<GradientStop> gradientStops = new List<GradientStop>();
@@ -3229,7 +3244,7 @@ namespace VectSharp.SVG
                   y2 = end[1];
                }
 
-               tbr.Add(id, (userSpaceOnUse, new LinearGradientBrush(new Point(x1, y1), new Point(x2, y2), gradientStops)));
+               tbr.Add(id, (userSpaceOnUse, new LinearGradientBrush(new Point(x1, y1), new Point(x2, y2), gradientStops, spreadMethod)));
             }
             else if (definition.Name.Equals("radialGradient", StringComparison.OrdinalIgnoreCase))
             {
@@ -3238,6 +3253,8 @@ namespace VectSharp.SVG
                string id = gradient.GetAttribute("id");
 
                bool userSpaceOnUse = gradient.GetAttribute("gradientUnits") == "userSpaceOnUse";
+
+               LinearGradientBrush.SpreadMethods spreadMethod = LinearGradientBrush.SpreadMethods.Pad;
 
                double cx;
                double cy;
@@ -3269,6 +3286,19 @@ namespace VectSharp.SVG
                if (!(gradient.HasAttribute("fy") && double.TryParse(gradient.GetAttribute("fy"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fy)))
                {
                   fy = cy;
+               }
+
+               if (gradient.HasAttribute("spreadMethod"))
+               {
+                  string spreadMeth = gradient.GetAttribute("spreadMethod").ToLowerInvariant();
+                  if (spreadMeth == "reflect")
+                  {
+                     spreadMethod = LinearGradientBrush.SpreadMethods.Reflect;
+                  }
+                  else if (spreadMeth == "repeat")
+                  {
+                     spreadMethod = LinearGradientBrush.SpreadMethods.Repeat;
+                  }
                }
 
                List<GradientStop> gradientStops = new List<GradientStop>();
@@ -3437,7 +3467,7 @@ namespace VectSharp.SVG
                   r = r * Math.Sqrt(Math.Abs(determinant));
                }
 
-               tbr.Add(id, (userSpaceOnUse, new RadialGradientBrush(new Point(fx, fy), new Point(cx, cy), r, gradientStops)));
+               tbr.Add(id, (userSpaceOnUse, new RadialGradientBrush(new Point(fx, fy), new Point(cx, cy), r, gradientStops, spreadMethod)));
             }
          }
 

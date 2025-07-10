@@ -23,6 +23,7 @@ using VectSharp.PDF.PDFObjects;
 using System.Linq;
 using VectSharp.PDF.Figures;
 using VectSharp.PDF.OptionalContentGroups;
+using System.Numerics;
 
 namespace VectSharp.PDF
 {
@@ -338,8 +339,156 @@ namespace VectSharp.PDF
             return pageContentStreams;
         }
 
+
+        private static LinearGradientBrush ReflectLinearGradientTest(LinearGradientBrush lg)
+        {
+            int repeats = 50; // Anzahl der Wiederholungen (gerade Zahl empfohlen)
+            int subdivisions = 2; // Anzahl der Unterteilungen pro Abschnitt für weiche Übergänge
+            var stops = new List<GradientStop>(repeats * subdivisions);
+
+            // Richtung und Mittelpunkt berechnen
+            var dir = new Vector2((float)(lg.EndPoint.X - lg.StartPoint.X), (float)(lg.EndPoint.Y - lg.StartPoint.Y));
+            var center = new Vector2(
+                (float)(lg.StartPoint.X + lg.EndPoint.X) / 2f,
+                (float)(lg.StartPoint.Y + lg.EndPoint.Y) / 2f
+            );
+
+            float halfRepeats = repeats / 2f;
+            var newStart = center - dir * halfRepeats / 2f;
+            var newEnd = center + dir * halfRepeats / 2f;
+
+            // Für jede Wiederholung (vorwärts/rückwärts)
+            for (int i = 0; i < repeats; i++)
+            {
+               bool flip = (i % 2) == 1;
+               float section = i - halfRepeats / 2f;
+
+               for (int s = 0; s < subdivisions; s++)
+               {
+                  // t läuft von 0 bis 1 innerhalb eines Abschnitts
+                  double t = s / (double)(subdivisions - 1);
+
+                  // Offset im Originalgradienten berechnen (entlang der Stops, nicht linear!)
+                  double origOffset = flip ? (1.0 - t) : t;
+                  Colour color = InterpolateGradientColour(lg.GradientStops.ToList(), origOffset);
+
+                  // Offset im Gesamtverlauf berechnen
+                  double offset = (section + t) / repeats + 0.5;
+                  stops.Add(new GradientStop(color, offset));
+               }
+            }
+
+            // Die Offsets der Stops müssen streng monoton steigend und im Bereich [0,1] liegen
+            // Optional: Doppelte Offsets entfernen (kann bei sehr vielen Wiederholungen/Subdivisions auftreten)
+
+            return new LinearGradientBrush(
+                new Point(newStart.X, newStart.Y),
+                new Point(newEnd.X, newEnd.Y),
+                stops
+            );
+        }
+
+        public static Colour LerpColor(Colour a, Colour b, double t)
+        {
+            // Clamp t auf [0,1]
+            if (t < 0) t = 0;
+            if (t > 1) t = 1;
+
+            double r = a.R + (b.R - a.R) * t;
+            double g = a.G + (b.G - a.G) * t;
+            double bVal = a.B + (b.B - a.B) * t;
+            double aVal = a.A + (b.A - a.A) * t;
+
+            return Colour.FromRgba(r, g, bVal, aVal);
+        }
+
+         // Hilfsfunktion: Interpoliert die Farbe für einen gegebenen Offset im Originalgradienten
+        private static Colour InterpolateGradientColour(IList<GradientStop> stops, double offset)
+        {
+            if (offset <= stops[0].Offset)
+               return stops[0].Colour;
+            if (offset >= stops[stops.Count - 1].Offset)
+               return stops[stops.Count - 1].Colour;
+
+            for (int i = 0; i < stops.Count - 1; i++)
+            {
+               if (offset >= stops[i].Offset && offset <= stops[i + 1].Offset)
+               {
+                  double t = (offset - stops[i].Offset) / (stops[i + 1].Offset - stops[i].Offset);
+                  return LerpColor(stops[i].Colour, stops[i + 1].Colour, t);
+               }
+            }
+            return stops[0].Colour; // Fallback
+        }
+
+        private static LinearGradientBrush ReflectLinearGradient10(LinearGradientBrush lg)
+        {
+            Vector2 vcStart = new Vector2((float)(lg.StartPoint.X), (float)(lg.StartPoint.Y));
+            Vector2 vcDir = new Vector2((float)(lg.EndPoint.X - lg.StartPoint.X), (float)(lg.EndPoint.Y - lg.StartPoint.Y));
+            List<GradientStop> stopsTemp = new List<GradientStop>(lg.GradientStops.Count);
+            List<GradientStop> stops = new List<GradientStop>(lg.GradientStops.Count * 20);
+            foreach (var item in lg.GradientStops)
+            {
+               stopsTemp.Add(new GradientStop(item.Colour, item.Offset / 20.0));
+            }
+            bool flip = false;
+
+            double lastStopOffset = 0.0;
+            for (int i = 0; i < 20; i++)
+            {
+               for (int j = 0; j < stopsTemp.Count; j++)
+               {
+                  var itemA = stopsTemp[j];
+                  var itemB = flip ? stopsTemp[stopsTemp.Count - 1 - j] : stopsTemp[j];
+                  stops.Add(new GradientStop(itemB.Colour, (i*0.05) + itemA.Offset));
+               }
+               lastStopOffset += stopsTemp[stopsTemp.Count - 1].Offset;
+
+               flip = !flip;
+            }
+            Vector2 vcEnd = vcStart + vcDir * 10;
+            vcStart = vcStart - vcDir * 10;
+            stops = stops.Distinct().ToList();
+            return new LinearGradientBrush(new Point(vcStart.X, vcStart.Y), new Point(vcEnd.X, vcEnd.Y), stops);
+        }
+
+        private static LinearGradientBrush ReflectLinearGradientOnce(LinearGradientBrush lg)
+        {
+            Vector2 vcStart = new Vector2((float)(lg.StartPoint.X), (float)(lg.StartPoint.Y));
+            Vector2 vcDir = new Vector2((float)(lg.EndPoint.X - lg.StartPoint.X), (float)(lg.EndPoint.Y - lg.StartPoint.Y));
+            List<GradientStop> stopsTemp = new List<GradientStop>(lg.GradientStops.Count);
+            List<GradientStop> stops = new List<GradientStop>(lg.GradientStops.Count * 2);
+            foreach (var item in lg.GradientStops)
+            {
+               stopsTemp.Add(new GradientStop(item.Colour, item.Offset / 2.0));
+            }
+            bool flip = false;
+
+            double lastStopOffset = 0.0;
+            for (int i = 0; i < 2; i++)
+            {
+               for (int j = 0; j < stopsTemp.Count; j++)
+               {
+                  var itemA = stopsTemp[j];
+                  var itemB = flip ? stopsTemp[stopsTemp.Count - 1 - j] : stopsTemp[j];
+                  stops.Add(new GradientStop(itemB.Colour, (i*0.5) + itemA.Offset));
+               }
+               lastStopOffset += stopsTemp[stopsTemp.Count - 1].Offset;
+
+               flip = !flip;
+            }
+            Vector2 vcEnd = vcStart + vcDir * 2;
+            return new LinearGradientBrush(new Point(vcStart.X, vcStart.Y), new Point(vcEnd.X, vcEnd.Y), stops);
+        }
+
         private static PDFGradient CreateGradient(bool includeMatrix, GradientBrush gradient, double[,] matrix, List<PDFReferenceableObject> pdfObjects)
         {
+         
+            //if(gradient is LinearGradientBrush lg && lg.SpreadMethod==GradientBrush.SpreadMethods.Reflect)
+            //{
+            //    gradient = ReflectLinearGradientTest(lg);
+            //}
+
             PDFInterpolationFunction functionObject;
 
             if (gradient.GradientStops.Count == 2)

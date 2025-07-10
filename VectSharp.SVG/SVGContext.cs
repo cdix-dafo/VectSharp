@@ -3923,6 +3923,18 @@ namespace VectSharp.SVG
             gradient.SetAttribute("y1", brush.StartPoint.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
             gradient.SetAttribute("x2", brush.EndPoint.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
             gradient.SetAttribute("y2", brush.EndPoint.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            
+            string spreadMeth = string.Empty;
+            if(brush.SpreadMethod==LinearGradientBrush.SpreadMethods.Reflect)
+            {
+               spreadMeth = "reflect";
+            }
+            else if (brush.SpreadMethod == LinearGradientBrush.SpreadMethods.Repeat)
+            {
+               spreadMeth = "repeat";
+            }
+            if (spreadMeth != string.Empty)
+               gradient.SetAttribute("spreadMethod", spreadMeth);
 
             int index = 0;
             foreach (GradientStop stop in brush.GradientStops)

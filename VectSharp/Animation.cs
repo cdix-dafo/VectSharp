@@ -300,7 +300,7 @@ namespace VectSharp
                         interpolatedStops.Add(new GradientStop(InterpolateColour(startStops[i].Colour, endStops[i].Colour, position), InterpolateDouble(startStops[i].Offset, endStops[i].Offset, position)));
                     }
 
-                    return new RadialGradientBrush(InterpolatePoint(radialStart.FocalPoint, radialEnd.FocalPoint, position), InterpolatePoint(radialStart.Centre, radialEnd.Centre, position), InterpolateDouble(radialStart.Radius, radialEnd.Radius, position), interpolatedStops);
+                    return new RadialGradientBrush(InterpolatePoint(radialStart.FocalPoint, radialEnd.FocalPoint, position), InterpolatePoint(radialStart.Centre, radialEnd.Centre, position), InterpolateDouble(radialStart.Radius, radialEnd.Radius, position), interpolatedStops, radialEnd.SpreadMethod);
                 }
                 else if (start is SolidColourBrush solidStart3 && end is RadialGradientBrush radialEnd2)
                 {
@@ -314,7 +314,7 @@ namespace VectSharp
                         gradientStops.Add(new GradientStop(InterpolateColour(startColour, endColour, position), anchor));
                     }
 
-                    return new RadialGradientBrush(radialEnd2.FocalPoint, radialEnd2.Centre, radialEnd2.Radius, gradientStops);
+                    return new RadialGradientBrush(radialEnd2.FocalPoint, radialEnd2.Centre, radialEnd2.Radius, gradientStops, radialEnd2.SpreadMethod);
                 }
                 else if (start is RadialGradientBrush radialStart2 && end is SolidColourBrush solidEnd3)
                 {
@@ -328,7 +328,7 @@ namespace VectSharp
                         gradientStops.Add(new GradientStop(InterpolateColour(startColour, endColour, position), anchor));
                     }
 
-                    return new RadialGradientBrush(radialStart2.FocalPoint, radialStart2.Centre, radialStart2.Radius, gradientStops);
+                    return new RadialGradientBrush(radialStart2.FocalPoint, radialStart2.Centre, radialStart2.Radius, gradientStops, radialStart2.SpreadMethod);
                 }
                 else if (start is LinearGradientBrush linearStart3 && end is RadialGradientBrush radialEnd3)
                 {
@@ -354,7 +354,7 @@ namespace VectSharp
                         gradientStops.Add(new GradientStop(InterpolateColour(startColour, endColour, position), offset));
                     }
 
-                    return new RadialGradientBrush(InterpolatePoint(target, radialEnd3.FocalPoint, position), InterpolatePoint(target, radialEnd3.Centre, position), InterpolateDouble(radius, radialEnd3.Radius, position), gradientStops);
+                    return new RadialGradientBrush(InterpolatePoint(target, radialEnd3.FocalPoint, position), InterpolatePoint(target, radialEnd3.Centre, position), InterpolateDouble(radius, radialEnd3.Radius, position), gradientStops, radialEnd3.SpreadMethod);
                 }
                 else if (start is RadialGradientBrush && end is LinearGradientBrush)
                 {
