@@ -2,15 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Authors>Giorgio Bianchini</Authors>
+    <Authors>Giorgio Bianchini, Christian Dix, Manuel Schneider</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Company>University of Bristol</Company>
-    <Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This is the base package, and does not provide any output formats. For more information, see https://github.com/arklumpus/VectSharp</Description>
+    <Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This is the base package, and does not provide any output formats. For more information, see https://github.com/cdix-dafo/VectSharp</Description>
     <Version>2.6.1</Version>
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/arklumpus/VectSharp</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/cdix-dafo/VectSharp</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
 	<DefineConstants>CONTRACTS_FULL</DefineConstants>
+	<PackageId>DaFo$(AssemblyName)</PackageId>
+	<Title>Extended VectSharp</Title>
+	<RepositoryUrl>https://github.com/cdix-dafo/VectSharp</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
