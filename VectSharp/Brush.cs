@@ -277,6 +277,25 @@ namespace VectSharp
     public abstract class GradientBrush : Brush
     {
         /// <summary>
+        /// Represents the methods used to spread the gradient in a <see cref="GradientBrush"/>. The default is <see cref="SpreadMethods.Pad"/>.
+        /// </summary>
+        public enum SpreadMethods
+        {
+           /// <summary>
+           /// The gradient is extended infinitely.
+           /// </summary>
+           Pad,
+           /// <summary>
+           /// The gradient is repeated infinitely.
+           /// </summary>
+           Repeat,
+           /// <summary>
+           /// The gradient is reflected infinitely.
+           /// </summary>
+           Reflect,
+        }
+
+        /// <summary>
         /// The colour stops in the gradient.
         /// </summary>
         public GradientStops GradientStops { get; protected internal set; }
@@ -291,6 +310,11 @@ namespace VectSharp
     public class LinearGradientBrush : GradientBrush
     {
         /// <summary>
+        /// The method used to spread the gradient. Default is <see cref="GradientBrush.SpreadMethods.Pad"/>.
+        /// </summary>
+        public SpreadMethods SpreadMethod { get; } = SpreadMethods.Pad;
+
+        /// <summary>
         /// The starting point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.
         /// </summary>
         public Point StartPoint { get; }
@@ -300,12 +324,29 @@ namespace VectSharp
         /// </summary>
         public Point EndPoint { get; }
 
+      /// <summary>
+      /// Creates a new <see cref="LinearGradientBrush"/> with the specified start point, end point and gradient stops.
+      /// </summary>
+      /// <param name="startPoint">The starting point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+      /// <param name="endPoint">The ending point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+      /// <param name="gradientStops">The colour stops in the gradient.</param>
+      /// <param name="spreadMethod"> The method used to spread the gradient. Default is <see cref="GradientBrush.SpreadMethods.Pad"/>.</param>
+      public LinearGradientBrush(Point startPoint, Point endPoint, IEnumerable<GradientStop> gradientStops, SpreadMethods spreadMethod)
+        {
+            this.StartPoint = startPoint;
+            this.EndPoint = endPoint;
+
+            this.GradientStops = new GradientStops(gradientStops);
+            this.SpreadMethod = spreadMethod;
+        }
+
         /// <summary>
         /// Creates a new <see cref="LinearGradientBrush"/> with the specified start point, end point and gradient stops.
         /// </summary>
         /// <param name="startPoint">The starting point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
         /// <param name="endPoint">The ending point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
         /// <param name="gradientStops">The colour stops in the gradient.</param>
+        /// <param name="spreadMethod"> The method used to spread the gradient. Default is <see cref="SpreadMethods.Pad"/>.</param>
         public LinearGradientBrush(Point startPoint, Point endPoint, IEnumerable<GradientStop> gradientStops)
         {
             this.StartPoint = startPoint;
@@ -314,6 +355,38 @@ namespace VectSharp
             this.GradientStops = new GradientStops(gradientStops);
         }
 
+        /// <summary>
+        /// Creates a new <see cref="LinearGradientBrush"/> with the specified start point, end point and gradient stops.
+        /// </summary>
+        /// <param name="startPoint">The starting point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+        /// <param name="endPoint">The ending point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+        /// <param name="spreadMethod"> The method used to spread the gradient. Default is <see cref="GradientBrush.SpreadMethods.Pad"/>.</param>
+        /// <param name="gradientStops">The colour stops in the gradient.</param>
+        public LinearGradientBrush(Point startPoint, Point endPoint, SpreadMethods spreadMethod, params GradientStop[] gradientStops)
+        {
+            this.SpreadMethod = spreadMethod;
+            this.StartPoint = startPoint;
+            this.EndPoint = endPoint;
+            List<GradientStop> stops = (from el in gradientStops orderby el.Offset ascending select el).ToList();
+
+            if (stops.Count == 0)
+            {
+                stops.Add(new GradientStop(Colour.FromRgba(0, 0, 0, 0), 0));
+            }
+
+            if (stops[0].Offset > 0)
+            {
+                stops.Insert(0, new GradientStop(stops[0].Colour, 0));
+            }
+
+            if (stops[stops.Count - 1].Offset < 1)
+            {
+                stops.Add(new GradientStop(stops[stops.Count - 1].Colour, 1));
+            }
+
+            this.GradientStops = new GradientStops(gradientStops);
+        }
+        
         /// <summary>
         /// Creates a new <see cref="LinearGradientBrush"/> with the specified start point, end point and gradient stops.
         /// </summary>
@@ -399,13 +472,13 @@ namespace VectSharp
             Point p1 = Graphics.Multiply(currMatrix, this.StartPoint);
             Point p2 = Graphics.Multiply(currMatrix, this.EndPoint);
 
-            return new LinearGradientBrush(p1, p2, this.GradientStops);
+            return new LinearGradientBrush(p1, p2, this.GradientStops, SpreadMethod);
         }
 
         /// <inheritdoc/>
         public override Brush MultiplyOpacity(double opacity)
         {
-            return new LinearGradientBrush(this.StartPoint, this.EndPoint, from el in this.GradientStops select el.MultiplyOpacity(opacity));
+            return new LinearGradientBrush(this.StartPoint, this.EndPoint, from el in this.GradientStops select el.MultiplyOpacity(opacity), SpreadMethod);
         }
     }
 
@@ -415,6 +488,11 @@ namespace VectSharp
     [DebuggerDisplay("\\{ FocalPoint: {FocalPoint}, Centre: {Centre}, Radius: {Radius}, GradientStops: {GradientStops} \\}")]
     public class RadialGradientBrush : GradientBrush
     {
+        /// <summary>
+        /// The method used to spread the gradient. Default is <see cref="GradientBrush.SpreadMethods.Pad"/>.
+        /// </summary>
+        public SpreadMethods SpreadMethod { get; } = SpreadMethods.Pad;
+        
         /// <summary>
         /// The focal point of the gradient (i.e. the point within the circle where the gradient starts).
         /// </summary>
@@ -507,11 +585,52 @@ namespace VectSharp
 
             this.GradientStops = new GradientStops(gradientStops);
         }
+        
+        /// <summary>
+        /// Creates a new <see cref="RadialGradientBrush"/> with the specified focal point, centre, radius and gradient stops.
+        /// </summary>
+        /// <param name="focalPoint">The focal point of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+        /// <param name="centre">The centre of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+        /// <param name="radius">The radius of the gradient. Note that this is relative to the current coordinate system when the gradient is used.</param>
+        /// <param name="gradientStops">The colour stops in the gradient.</param>
+        /// <param name="spreadMethod"> The method used to spread the gradient. Default is <see cref="GradientBrush.SpreadMethods.Pad"/>.</param>
+        public RadialGradientBrush(Point focalPoint, Point centre, double radius, IEnumerable<GradientStop> gradientStops, SpreadMethods spreadMethod)
+        {
+            if (new Point(focalPoint.X - centre.X, focalPoint.Y - centre.Y).Modulus() > radius)
+            {
+                Point norm = new Point(focalPoint.X - centre.X, focalPoint.Y - centre.Y).Normalize();
+                focalPoint = new Point(centre.X + norm.X * radius, centre.Y + norm.Y * radius);
+            }
+
+            this.SpreadMethod = spreadMethod;
+            this.FocalPoint = focalPoint;
+            this.Centre = centre;
+            this.Radius = radius;
+
+            List<GradientStop> stops = (from el in gradientStops orderby el.Offset ascending select el).ToList();
+
+            if (stops.Count == 0)
+            {
+                stops.Add(new GradientStop(Colour.FromRgba(0, 0, 0, 0), 0));
+            }
+
+            if (stops[0].Offset > 0)
+            {
+                stops.Insert(0, new GradientStop(stops[0].Colour, 0));
+            }
+
+            if (stops[stops.Count - 1].Offset < 1)
+            {
+                stops.Add(new GradientStop(stops[stops.Count - 1].Colour, 1));
+            }
+
+            this.GradientStops = new GradientStops(gradientStops);
+        }
 
         /// <inheritdoc/>
         public override Brush MultiplyOpacity(double opacity)
         {
-            return new RadialGradientBrush(this.FocalPoint, this.Centre, this.Radius, from el in this.GradientStops select el.MultiplyOpacity(opacity));
+            return new RadialGradientBrush(this.FocalPoint, this.Centre, this.Radius, from el in this.GradientStops select el.MultiplyOpacity(opacity), SpreadMethod);
         }
     }
 }

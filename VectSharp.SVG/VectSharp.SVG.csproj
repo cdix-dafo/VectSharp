@@ -32,7 +32,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="ExCSS" Version="4.2.5" />
-		<PackageReference Include="VectSharp" Version="2.6.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\VectSharp\VectSharp.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

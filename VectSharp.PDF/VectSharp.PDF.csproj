@@ -21,11 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="VectSharp" Version="2.6.1" />
-  </ItemGroup>
-
-  <ItemGroup>
 	<ProjectReference Include="../VectSharp.PDF.SourceGeneration/VectSharp.PDF.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	<ProjectReference Include="..\VectSharp\VectSharp.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
