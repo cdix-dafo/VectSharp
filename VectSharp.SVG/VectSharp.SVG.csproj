@@ -10,7 +10,7 @@
 		<PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/cdix-dafo/VectSharp</PackageProjectUrl>
 		<PackageIcon>icon.png</PackageIcon>
-		<Version>1.10.2</Version>
+		<Version>1.10.3</Version>
 		<PackageId>DaFo$(AssemblyName)</PackageId>
 		<Title>Extended VectSharp.SVG</Title>
 	</PropertyGroup>
@@ -31,11 +31,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="DaFoVectSharp" Version="2.6.2" />
 		<PackageReference Include="ExCSS" Version="4.2.5" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\VectSharp\VectSharp.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
