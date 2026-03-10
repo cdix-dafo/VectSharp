@@ -1786,6 +1786,16 @@ namespace VectSharp.SVG
                     tSpans.Add((currentRun.ToString(), currentKerning));
                 }
 
+                for (int i = 1; i < tSpans.Count; i++)
+                {
+                    if (tSpans[i].Item2.X == 0 && tSpans[i].Item2.Y == 0)
+                    {
+                        tSpans[i - 1] = (tSpans[i - 1].Item1 + tSpans[i].Item1, tSpans[i - 1].Item2);
+                        tSpans.RemoveAt(i);
+                        i--;
+                    }
+                }
+
                 for (int i = 0; i < tSpans.Count; i++)
                 {
                     XmlElement tspanElement = Document.CreateElement("tspan", SVGNamespace);
@@ -3856,7 +3866,7 @@ namespace VectSharp.SVG
             {
                 throw new ArgumentException("Invalid matrix transform: " + transformMatrix);
             }
-            
+
 
             double delta = a * d - b * c;
 
@@ -4080,6 +4090,7 @@ namespace VectSharp.SVG
         /// </summary>
         /// <param name="svgDocument">An <see cref="XmlDocument"/> containing an SVG image</param>
         /// <remarks>Compared to the built-in methods to save XML documents, this method takes care of some quirks of the SVG format.</remarks>
+        /// <returns>A <see langword="string"/> containing the SVG image.</returns>
         public static string WriteSVGXML(this XmlDocument svgDocument)
         {
             using (MemoryStream ms = new MemoryStream())
