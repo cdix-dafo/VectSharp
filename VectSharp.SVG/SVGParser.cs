@@ -2877,6 +2877,11 @@ namespace VectSharp.SVG
          }
 
          string[] splitValue = Regexes.ListSeparator.Split(value);
+         var length = splitValue.Length;
+         if (length > 0 && string.IsNullOrEmpty(splitValue[length - 1]))
+         {
+            Array.Resize(ref splitValue, length - 1);
+         }
          double[] tbr = new double[splitValue.Length];
 
          for (int i = 0; i < splitValue.Length; i++)
@@ -3073,7 +3078,7 @@ namespace VectSharp.SVG
                if (gradient.HasAttribute("spreadMethod"))
                {
                   string spreadMeth = gradient.GetAttribute("spreadMethod").ToLowerInvariant();
-                  if(spreadMeth=="reflect")
+                  if (spreadMeth == "reflect")
                   {
                      spreadMethod = LinearGradientBrush.SpreadMethods.Reflect;
                   }
