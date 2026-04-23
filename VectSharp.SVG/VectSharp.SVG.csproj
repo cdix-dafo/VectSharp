@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
 		<Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This package provides SVG output and (limited) input capability. For more information, see https://github.com/cdix-dafo/VectSharp</Description>
 		<Authors>Giorgio Bianchini, Christian Dix, Manuel Schneider</Authors>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -10,7 +10,7 @@
 		<PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/cdix-dafo/VectSharp</PackageProjectUrl>
 		<PackageIcon>icon.png</PackageIcon>
-		<Version>1.10.3</Version>
+		<Version>1.11.0</Version>
 		<PackageId>DaFo$(AssemblyName)</PackageId>
 		<Title>Extended VectSharp.SVG</Title>
 	</PropertyGroup>

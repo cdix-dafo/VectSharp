@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This package provides raster image (PNG) output capability. For more information, see https://github.com/arklumpus/VectSharp</Description>
     <Authors>Giorgio Bianchini</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Product>VectSharp</Product>
     <Company>University of Bristol</Company>
-    <Version>2.5.0</Version>
+    <Version>2.6.0</Version>
     <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/arklumpus/VectSharp</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>

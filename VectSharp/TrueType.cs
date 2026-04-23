@@ -887,19 +887,19 @@ namespace VectSharp
 
                 for (int i = 0; i < glyphs.Count; i++)
                 {
-                    if (glyphs[i] is CompositeGlyph)
+                    if (glyphs[i] is CompositeGlyph glyph)
                     {
-                        for (int j = 0; j < ((CompositeGlyph)glyphs[i]).GlyphIndex.Length; j++)
+                        for (int j = 0; j < glyph.GlyphIndex.Length; j++)
                         {
-                            if (originalGlyphIndices.Contains(((CompositeGlyph)glyphs[i]).GlyphIndex[j]))
+                            if (originalGlyphIndices.Contains(glyph.GlyphIndex[j]))
                             {
-                                ((CompositeGlyph)glyphs[i]).GlyphIndex[j] = (ushort)originalGlyphIndices.IndexOf(((CompositeGlyph)glyphs[i]).GlyphIndex[j]);
+                                glyph.GlyphIndex[j] = (ushort)originalGlyphIndices.IndexOf(glyph.GlyphIndex[j]);
                             }
                             else
                             {
-                                originalGlyphIndices.Add(((CompositeGlyph)glyphs[i]).GlyphIndex[j]);
-                                glyphs.Add(originalGlyf.Glyphs[((CompositeGlyph)glyphs[i]).GlyphIndex[j]]);
-                                ((CompositeGlyph)glyphs[i]).GlyphIndex[j] = (ushort)originalGlyphIndices.IndexOf(((CompositeGlyph)glyphs[i]).GlyphIndex[j]);
+                                originalGlyphIndices.Add(glyph.GlyphIndex[j]);
+                                glyphs.Add(originalGlyf.Glyphs[glyph.GlyphIndex[j]]);
+                                glyph.GlyphIndex[j] = (ushort)originalGlyphIndices.IndexOf(glyph.GlyphIndex[j]);
                             }
                         }
                     }
@@ -983,9 +983,10 @@ namespace VectSharp
                     {"maxp", maxp },
                 };
 
-                if (Tables.ContainsKey("OS/2"))
+                ITrueTypeTable value; 
+                if (Tables.TryGetValue("OS/2", out value))
                 {
-                    TrueTypeOS2Table originalOS2 = (TrueTypeOS2Table)Tables["OS/2"];
+                    TrueTypeOS2Table originalOS2 = (TrueTypeOS2Table)value;
 
                     TrueTypeOS2Table os2 = new TrueTypeOS2Table()
                     {
@@ -1032,33 +1033,33 @@ namespace VectSharp
 
                 newTables.Add("hmtx", hmtx);
                 newTables.Add("cmap", cmap);
-                if (Tables.ContainsKey("fpgm"))
+                if (Tables.TryGetValue("fpgm", out value))
                 {
-                    TrueTypeRawTable fpgm = (TrueTypeRawTable)Tables["fpgm"];
+                    TrueTypeRawTable fpgm = (TrueTypeRawTable)value;
                     newTables.Add("fpgm", fpgm);
                 }
-                if (Tables.ContainsKey("prep"))
+                if (Tables.TryGetValue("prep", out value))
                 {
-                    TrueTypeRawTable prep = (TrueTypeRawTable)Tables["prep"];
+                    TrueTypeRawTable prep = (TrueTypeRawTable)value;
                     newTables.Add("prep", prep);
                 }
-                if (Tables.ContainsKey("cvt "))
+                if (Tables.TryGetValue("cvt ", out value))
                 {
-                    TrueTypeRawTable cvt = (TrueTypeRawTable)Tables["cvt "];
+                    TrueTypeRawTable cvt = (TrueTypeRawTable)value;
                     newTables.Add("cvt ", cvt);
                 }
                 newTables.Add("loca", loca);
                 newTables.Add("glyf", glyf);
 
-                if (Tables.ContainsKey("name"))
+                if (Tables.TryGetValue("name", out value))
                 {
-                    TrueTypeNameTable name = (TrueTypeNameTable)Tables["name"];
+                    TrueTypeNameTable name = (TrueTypeNameTable)value;
                     newTables.Add("name", name);
                 }
 
-                if (Tables.ContainsKey("post"))
+                if (Tables.TryGetValue("post", out value))
                 {
-                    TrueTypePostTable oldPost = (TrueTypePostTable)Tables["post"];
+                    TrueTypePostTable oldPost = (TrueTypePostTable)value;
 
                     TrueTypePostTable post = new TrueTypePostTable()
                     {

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFramework>net6.0</TargetFramework>
+      <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
       <PackageIcon>icon.png</PackageIcon>
       <GenerateDocumentationFile>true</GenerateDocumentationFile>
       <Authors>Giorgio Bianchini</Authors>
@@ -10,7 +10,7 @@
       <Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This package provides utilities using ImageSharp to make it possible to include in VectSharp graphics images in various formats. For more information, see https://github.com/cdix-dafo/VectSharp</Description>
       <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/cdix-dafo/VectSharp</PackageProjectUrl>
-      <Version>2.0.1</Version>
+      <Version>2.1.0</Version>
       <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
       <PackageId>DaFo$(AssemblyName)</PackageId>
       <Title>Extended VectSharp.ImageSharpUtils</Title>
