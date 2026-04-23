@@ -13,3 +13,4 @@ Release/
 MarkdownViewerDemo/Properties/
 VectSharp.MuPDFUtils/Properties/
 .DS_Store
+/nupkgs
