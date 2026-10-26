@@ -16,18 +16,15 @@
 */
 
 using System;
-using System.Buffers;
 using System.Numerics;
-using SixLabors.ImageSharp.Memory;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp;
-using System.Reflection;
 
 namespace VectSharp.Raster.ImageSharp
 {
-    // Adapted from https://github.com/SixLabors/ImageSharp.Drawing/blob/master/src/ImageSharp.Drawing/Processing/GradientBrush.cs - Why isn't this public? D:
-    internal abstract class GradientBrushApplicator<TPixel> : BrushApplicator<TPixel>
+    // Adapted from https://github.com/SixLabors/ImageSharp.Drawing/blob/main/src/ImageSharp.Drawing/Processing/GradientBrush.cs - Why isn't this public? D:
+    internal abstract class GradientBrushApplicator<TPixel> : BrushRenderer<TPixel>
              where TPixel : unmanaged, IPixel<TPixel>
     {
         private static readonly TPixel Transparent = Color.Transparent.ToPixel<TPixel>();
@@ -36,61 +33,29 @@ namespace VectSharp.Raster.ImageSharp
 
         private readonly GradientRepetitionMode repetitionMode;
 
-        private readonly MemoryAllocator allocator;
-
-        private readonly int scalineWidth;
-
-        private readonly object blenderBuffers;
-
-        private bool isDisposed;
-
-        private PixelBlender<TPixel> _blender;
-
-        IMemoryOwner<float> amountBuffer;
-        IMemoryOwner<TPixel> overlayBuffer;
-        static Type constructedLocalBlenderBuffersType;
-
-        static GradientBrushApplicator()
-        {
-            Assembly utilities = Assembly.Load("SixLabors.ImageSharp.Drawing");
-            Type genericThreadLocalBlenderBuffersType = utilities.GetType("SixLabors.ImageSharp.Drawing.Utilities.ThreadLocalBlenderBuffers`1", true);
-
-            Type[] typeArgs = new Type[] { typeof(TPixel) };
-            constructedLocalBlenderBuffersType = genericThreadLocalBlenderBuffersType.MakeGenericType(typeArgs);
-        }
-
+        private readonly PixelBlender<TPixel> blender;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GradientBrushApplicator{TPixel}"/> class.
         /// </summary>
         /// <param name="configuration">The configuration instance to use when performing operations.</param>
         /// <param name="options">The graphics options.</param>
-        /// <param name="target">The target image.</param>
+        /// <param name="canvasWidth">The canvas width for the current render pass.</param>
         /// <param name="colorStops">An array of color stops sorted by their position.</param>
         /// <param name="repetitionMode">Defines if and how the gradient should be repeated.</param>
         protected GradientBrushApplicator(
             Configuration configuration,
             GraphicsOptions options,
-            ImageFrame<TPixel> target,
+            int canvasWidth,
             ColorStop[] colorStops,
             GradientRepetitionMode repetitionMode)
-            : base(configuration, options, target)
+            : base(configuration, options, canvasWidth)
         {
             // TODO: requires colorStops to be sorted by position.
             // Use Array.Sort with a custom comparer.
             this.colorStops = colorStops;
             this.repetitionMode = repetitionMode;
-            this.scalineWidth = target.Width;
-            this.allocator = configuration.MemoryAllocator;
-
-            this.blenderBuffers = Activator.CreateInstance(constructedLocalBlenderBuffersType, new object[] { this.allocator, this.scalineWidth, false });
-
-            this._blender = (PixelBlender<TPixel>)this.GetType().GetProperty("Blender", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty).GetValue(this);
-
-            object data = this.blenderBuffers.GetType().GetField("data", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(this.blenderBuffers);
-            object bufferOwner = data.GetType().GetProperty("Value", BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty).GetValue(data);
-            amountBuffer = (IMemoryOwner<float>)bufferOwner.GetType().GetField("amountBuffer", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(bufferOwner);
-            overlayBuffer = (IMemoryOwner<TPixel>)bufferOwner.GetType().GetField("overlayBuffer", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(bufferOwner);
+            this.blender = PixelOperations<TPixel>.Instance.GetPixelBlender(options);
         }
 
         internal TPixel this[int x, int y]
@@ -136,16 +101,16 @@ namespace VectSharp.Raster.ImageSharp
 
                 float onLocalGradient = (positionOnCompleteGradient - from.Ratio) / (to.Ratio - from.Ratio);
 
-                return new Color(Vector4.Lerp((Vector4)from.Color, (Vector4)to.Color, onLocalGradient)).ToPixel<TPixel>();
+                return Color.FromScaledVector(Vector4.Lerp(from.Color.ToScaledVector4(), to.Color.ToScaledVector4(), onLocalGradient)).ToPixel<TPixel>();
             }
         }
 
         /// <inheritdoc />
-        public override void Apply(Span<float> scanline, int x, int y)
+        public override void Apply(Span<TPixel> destinationRow, ReadOnlySpan<float> scanline, int x, int y, BrushWorkspace<TPixel> workspace)
         {
-            Span<float> amounts = amountBuffer.Memory.Span.Slice(0, scanline.Length);
-            Span<TPixel> overlays = overlayBuffer.Memory.Span.Slice(0, scanline.Length);
-            
+            Span<float> amounts = workspace.GetAmounts(scanline.Length);
+            Span<TPixel> overlays = workspace.GetOverlays(scanline.Length);
+
             float blendPercentage = this.Options.BlendPercentage;
 
             // TODO: Remove bounds checks.
@@ -166,9 +131,7 @@ namespace VectSharp.Raster.ImageSharp
                 }
             }
 
-            Span<TPixel> destinationRow = this.Target.PixelBuffer.DangerousGetRowSpan(y).Slice(x, scanline.Length);
-
-            this._blender.Blend(this.Configuration, destinationRow, destinationRow, overlays, amounts);
+            this.blender.Blend(this.Configuration, destinationRow, destinationRow, overlays, amounts);
         }
 
         /// <summary>
@@ -184,24 +147,6 @@ namespace VectSharp.Raster.ImageSharp
         /// e.g. for the <see cref="GradientRepetitionMode" /> enum.
         /// </returns>
         protected abstract float PositionOnGradient(float x, float y);
-
-        /// <inheritdoc/>
-        protected override void Dispose(bool disposing)
-        {
-            if (this.isDisposed)
-            {
-                return;
-            }
-
-            base.Dispose(disposing);
-
-            if (disposing)
-            {
-                ((IDisposable)this.blenderBuffers).Dispose();
-            }
-
-            this.isDisposed = true;
-        }
 
         private (ColorStop From, ColorStop To) GetGradientSegment(float positionOnCompleteGradient)
         {

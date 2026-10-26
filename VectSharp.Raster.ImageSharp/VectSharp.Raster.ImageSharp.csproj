@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
+      <TargetFrameworks>net8.0</TargetFrameworks>
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       <Description>A library to produce vector graphics (including text) without too many dependencies. Extensible to support multiple output formats. This package provides raster image output capability (PNG, JPEG and more) using ImageSharp. For more information, see https://github.com/cdix-dafo/VectSharp</Description>
-      <Authors>Giorgio Bianchini</Authors>
+      <Authors>dataforum GmbH</Authors>
       <GenerateDocumentationFile>true</GenerateDocumentationFile>
       <Product>VectSharp</Product>
-      <Company>University of Bristol</Company>
-      <Version>2.3.0</Version>
+      <Company>dataforum GmbH</Company>
+      <Version>2.3.1</Version>
       <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/cdix-dafo/VectSharp</PackageProjectUrl>
       <PackageIcon>icon.png</PackageIcon>
@@ -35,8 +35,13 @@
 
    <ItemGroup>
       <PackageReference Include="DaFoVectSharp" Version="2.7.0" />
-      <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.3" />
+      <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="3.1.3" />
       <PackageReference Include="System.Memory" Version="4.5.5" />
    </ItemGroup>
+
+   <!-- Six Labors license: use sixlabors.lic from the repository root (not checked in), unless provided otherwise. -->
+   <PropertyGroup>
+      <SixLaborsLicenseFile Condition="'$(SixLaborsLicenseFile)' == '' and Exists('$(MSBuildThisFileDirectory)..\sixlabors.lic')">$(MSBuildThisFileDirectory)..\sixlabors.lic</SixLaborsLicenseFile>
+   </PropertyGroup>
 
 </Project>

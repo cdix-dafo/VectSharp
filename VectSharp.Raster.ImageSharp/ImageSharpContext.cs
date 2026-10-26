@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using SixLabors.ImageSharp.Advanced;
 using System.IO;
 using VectSharp.Filters;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Gif;
 using System.Threading.Tasks;
 using System.Linq;
@@ -35,6 +36,11 @@ namespace VectSharp.Raster.ImageSharp
         public static System.Numerics.Matrix3x2 ToMatrix(this double[,] matrix)
         {
             return new System.Numerics.Matrix3x2((float)matrix[0, 0], (float)matrix[1, 0], (float)matrix[0, 1], (float)matrix[1, 1], (float)matrix[0, 2], (float)matrix[1, 2]);
+        }
+
+        public static System.Numerics.Matrix4x4 ToMatrix4x4(this double[,] matrix)
+        {
+            return new System.Numerics.Matrix4x4(matrix.ToMatrix());
         }
 
         public static double[] Multiply(double[,] matrix, double[] vector)
@@ -194,10 +200,10 @@ namespace VectSharp.Raster.ImageSharp
             this.Image.Mutate(x => x.Fill(backgroundColour.ToImageSharpColor()));
 
             this.Buffer = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(IntWidth, IntHeight);
-            this.Buffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
+            this.Buffer.Mutate(x => x.Clear(Color.Transparent));
 
             this.ClipBuffer = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(IntWidth, IntHeight);
-            this.ClipBuffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
+            this.ClipBuffer.Mutate(x => x.Clear(Color.Transparent));
 
             this.clips = new Stack<Image>();
             this.CurrentClip = null;
@@ -306,7 +312,7 @@ namespace VectSharp.Raster.ImageSharp
             }
             else
             {
-                this.ClipBuffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
+                this.ClipBuffer.Mutate(x => x.Clear(Color.Transparent));
                 this.ClipBuffer.Mutate(x => x.CheckedDrawImage(sourceImage, new SixLabors.ImageSharp.Point((int)Math.Round(minX), (int)Math.Round(minY)), 1));
 
                 GraphicsOptions opt = new GraphicsOptions() { AlphaCompositionMode = SixLabors.ImageSharp.PixelFormats.PixelAlphaCompositionMode.SrcIn };
@@ -323,27 +329,27 @@ namespace VectSharp.Raster.ImageSharp
         {
             IPath path = this.currentPath.Build();
 
-            ShapeOptions shapeOptions = new ShapeOptions();
+            DrawingOptions drawingOptions = new DrawingOptions() { Transform = _transform.ToMatrix4x4() };
 
             switch (fillRule)
             {
                 case FillRule.NonZeroWinding:
-                    shapeOptions.IntersectionRule = IntersectionRule.NonZero;
+                    drawingOptions.IntersectionRule = IntersectionRule.NonZero;
                     break;
                 case FillRule.EvenOdd:
-                    shapeOptions.IntersectionRule = IntersectionRule.EvenOdd;
+                    drawingOptions.IntersectionRule = IntersectionRule.EvenOdd;
                     break;
 
             }
 
             if (this.CurrentClip == null)
             {
-                this.Image.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix(), ShapeOptions = shapeOptions }, this.FillStyle.ToImageSharpBrush(_transform), path));
+                this.Image.Mutate(x => x.Fill(drawingOptions, this.FillStyle.ToImageSharpBrush(_transform), path));
             }
             else
             {
-                this.ClipBuffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
-                this.ClipBuffer.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix(), ShapeOptions = shapeOptions }, this.FillStyle.ToImageSharpBrush(_transform), path));
+                this.ClipBuffer.Mutate(x => x.Clear(Color.Transparent));
+                this.ClipBuffer.Mutate(x => x.Fill(drawingOptions, this.FillStyle.ToImageSharpBrush(_transform), path));
 
                 GraphicsOptions opt = new GraphicsOptions() { AlphaCompositionMode = SixLabors.ImageSharp.PixelFormats.PixelAlphaCompositionMode.SrcIn };
 
@@ -471,18 +477,18 @@ namespace VectSharp.Raster.ImageSharp
 
             Image newClip;
 
-            DrawingOptions opt = new DrawingOptions() { Transform = _transform.ToMatrix() };
+            DrawingOptions opt = new DrawingOptions() { Transform = _transform.ToMatrix4x4() };
 
             if (this.CurrentClip == null)
             {
                 newClip = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(IntWidth, IntHeight);
-                newClip.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
-                newClip.Mutate(x => x.Fill(opt, Color.FromRgb(0, 0, 0), path));
+                newClip.Mutate(x => x.Clear(Color.Transparent));
+                newClip.Mutate(x => x.Fill(opt, new SolidBrush(Color.Black), path));
             }
             else
             {
-                this.Buffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
-                this.Buffer.Mutate(x => x.Fill(opt, Color.FromRgb(0, 0, 0), path));
+                this.Buffer.Mutate(x => x.Clear(Color.Transparent));
+                this.Buffer.Mutate(x => x.Fill(opt, new SolidBrush(Color.Black), path));
 
                 newClip = this.CurrentClip.Clone(x => x.CheckedDrawImage(this.Buffer, new GraphicsOptions() { AlphaCompositionMode = SixLabors.ImageSharp.PixelFormats.PixelAlphaCompositionMode.SrcIn }));
 
@@ -526,12 +532,12 @@ namespace VectSharp.Raster.ImageSharp
             {
                 if (this.CurrentClip == null)
                 {
-                    this.Image.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix() }, this.StrokeStyle.ToImageSharpBrush(_transform), this.currentPath.Build().GenerateOutline((float)(this.LineWidth), this.Dash.ToImageSharpDash(this.LineWidth), false, this.LineJoin.ToImageSharpJoint(), this.LineCap.ToImageSharpCap())));
+                    this.Image.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix4x4() }, this.StrokeStyle.ToImageSharpBrush(_transform), this.currentPath.Build().GenerateOutline((float)(this.LineWidth), this.Dash.ToImageSharpDash(this.LineWidth), false, new StrokeOptions() { LineJoin = this.LineJoin.ToImageSharpJoint(), LineCap = this.LineCap.ToImageSharpCap() })));
                 }
                 else
                 {
-                    this.ClipBuffer.Mutate(x => x.Clear(Color.FromRgba(0, 0, 0, 0)));
-                    this.ClipBuffer.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix() }, this.StrokeStyle.ToImageSharpBrush(_transform), this.currentPath.Build().GenerateOutline((float)(this.LineWidth), this.Dash.ToImageSharpDash(this.LineWidth), false, this.LineJoin.ToImageSharpJoint(), this.LineCap.ToImageSharpCap())));
+                    this.ClipBuffer.Mutate(x => x.Clear(Color.Transparent));
+                    this.ClipBuffer.Mutate(x => x.Fill(new DrawingOptions() { Transform = _transform.ToMatrix4x4() }, this.StrokeStyle.ToImageSharpBrush(_transform), this.currentPath.Build().GenerateOutline((float)(this.LineWidth), this.Dash.ToImageSharpDash(this.LineWidth), false, new StrokeOptions() { LineJoin = this.LineJoin.ToImageSharpJoint(), LineCap = this.LineCap.ToImageSharpCap() })));
 
                     GraphicsOptions opt = new GraphicsOptions() { AlphaCompositionMode = SixLabors.ImageSharp.PixelFormats.PixelAlphaCompositionMode.SrcIn };
 
@@ -744,6 +750,21 @@ namespace VectSharp.Raster.ImageSharp
             return x.DrawImage(image, options);
         }
 
+        public static IImageProcessingContext Fill(this IImageProcessingContext x, Color color)
+        {
+            return x.Paint(canvas => canvas.Fill(new SolidBrush(color)));
+        }
+
+        public static IImageProcessingContext Fill(this IImageProcessingContext x, DrawingOptions options, SixLabors.ImageSharp.Drawing.Processing.Brush brush, IPath path)
+        {
+            return x.Paint(options, canvas => canvas.Fill(brush, path));
+        }
+
+        public static IImageProcessingContext Clear(this IImageProcessingContext x, Color color)
+        {
+            return x.Paint(canvas => canvas.Clear(new SolidBrush(color)));
+        }
+
         public static PointF ToPointF(this Point pt, double scaleFactor)
         {
             return new PointF((float)(pt.X * scaleFactor), (float)(pt.Y * scaleFactor));
@@ -828,7 +849,7 @@ namespace VectSharp.Raster.ImageSharp
 
         public static Color ToImageSharpColor(this Colour colour)
         {
-            return Color.FromRgba((byte)(colour.R * 255), (byte)(colour.G * 255), (byte)(colour.B * 255), (byte)(colour.A * 255));
+            return Color.FromPixel(new SixLabors.ImageSharp.PixelFormats.Rgba32((byte)(colour.R * 255), (byte)(colour.G * 255), (byte)(colour.B * 255), (byte)(colour.A * 255)));
         }
 
         public static SixLabors.ImageSharp.Drawing.Processing.Brush ToImageSharpBrush(this Brush brush, double[,] transform)
@@ -846,7 +867,7 @@ namespace VectSharp.Raster.ImageSharp
                     colorStops[i] = new ColorStop((float)linear.GradientStops[i].Offset, linear.GradientStops[i].Colour.ToImageSharpColor());
                 }
 
-                return new SixLabors.ImageSharp.Drawing.Processing.LinearGradientBrush(transform.Multiply(linear.StartPoint).ToPointF(1), transform.Multiply(linear.EndPoint).ToPointF(1), GradientRepetitionMode.None, colorStops);
+                return new SixLabors.ImageSharp.Drawing.Processing.LinearGradientBrush(linear.StartPoint.ToPointF(1), linear.EndPoint.ToPointF(1), GradientRepetitionMode.None, colorStops);
             }
             else if (brush is RadialGradientBrush radial)
             {
@@ -877,31 +898,31 @@ namespace VectSharp.Raster.ImageSharp
             }
         }
 
-        public static JointStyle ToImageSharpJoint(this LineJoins join)
+        public static LineJoin ToImageSharpJoint(this LineJoins join)
         {
             switch (join)
             {
                 case LineJoins.Round:
-                    return JointStyle.Round;
+                    return SixLabors.ImageSharp.Drawing.LineJoin.Round;
                 case LineJoins.Miter:
-                    return JointStyle.Miter;
+                    return SixLabors.ImageSharp.Drawing.LineJoin.Miter;
                 case LineJoins.Bevel:
-                    return JointStyle.Square;
+                    return SixLabors.ImageSharp.Drawing.LineJoin.Bevel;
                 default:
-                    return JointStyle.Miter;
+                    return SixLabors.ImageSharp.Drawing.LineJoin.Miter;
             }
         }
 
-        public static EndCapStyle ToImageSharpCap(this LineCaps cap)
+        public static LineCap ToImageSharpCap(this LineCaps cap)
         {
             switch (cap)
             {
                 case LineCaps.Square:
-                    return EndCapStyle.Square;
+                    return SixLabors.ImageSharp.Drawing.LineCap.Square;
                 case LineCaps.Round:
-                    return EndCapStyle.Round;
+                    return SixLabors.ImageSharp.Drawing.LineCap.Round;
                 case LineCaps.Butt:
-                    return EndCapStyle.Butt;
+                    return SixLabors.ImageSharp.Drawing.LineCap.Butt;
                 default:
                     throw new NotImplementedException();
             }
@@ -922,9 +943,9 @@ namespace VectSharp.Raster.ImageSharp
                 InverseTransform = MatrixUtils.Invert(transform);
             }
 
-            public override BrushApplicator<TPixel> CreateApplicator<TPixel>(Configuration configuration, GraphicsOptions options, ImageFrame<TPixel> source, RectangleF region)
+            public override BrushRenderer<TPixel> CreateRenderer<TPixel>(Configuration configuration, GraphicsOptions options, int canvasWidth, RectangleF region)
             {
-                return new RadialGradientBrushPDFStyleApplicator<TPixel>(configuration, options, source, Centre, FocalPoint, Radius, InverseTransform, ColorStops, RepetitionMode);
+                return new RadialGradientBrushPDFStyleApplicator<TPixel>(configuration, options, canvasWidth, Centre, FocalPoint, Radius, InverseTransform, ColorStopsArray, RepetitionMode);
             }
 
             private class RadialGradientBrushPDFStyleApplicator<TPixel> : GradientBrushApplicator<TPixel> where TPixel : unmanaged, SixLabors.ImageSharp.PixelFormats.IPixel<TPixel>
@@ -939,11 +960,11 @@ namespace VectSharp.Raster.ImageSharp
                 public RadialGradientBrushPDFStyleApplicator(
                     Configuration configuration,
                     GraphicsOptions options,
-                    ImageFrame<TPixel> target,
+                    int canvasWidth,
                     Point centre, Point focalPoint, double radius, double[,] inverseTransform,
                     ColorStop[] colorStops,
                     GradientRepetitionMode repetitionMode)
-                : base(configuration, options, target, colorStops, repetitionMode)
+                : base(configuration, options, canvasWidth, colorStops, repetitionMode)
                 {
                     this.Centre = centre;
                     this.FocalPoint = focalPoint;
@@ -984,12 +1005,6 @@ namespace VectSharp.Raster.ImageSharp
                     {
                         return (float)Math.Min(tbr1, tbr2);
                     }
-                }
-
-                /// <inheritdoc/>
-                public override void Apply(Span<float> scanline, int x, int y)
-                {
-                    base.Apply(scanline, x, y);
                 }
             }
         }
@@ -1325,7 +1340,7 @@ namespace VectSharp.Raster.ImageSharp
         /// <param name="durationScaling">A scaling factor that will be applied to all durations in the animation. Values greater than 1 slow down the animation, values smaller than 1 accelerate it. Note that this does not affect the frame rate of the animation.</param>
         /// <param name="colorTableMode">Determines whether a single colour table should be used for the whole image, or if a different colour table should be used for each frame.</param>
         /// <returns>An <see cref="Image"/> containing the animated GIF.</returns>
-        public static Image SaveAsAnimatedGIF(this Animation animation, double scale = 1, double frameRate = 50, double durationScaling = 1, GifColorTableMode colorTableMode = GifColorTableMode.Local)
+        public static Image SaveAsAnimatedGIF(this Animation animation, double scale = 1, double frameRate = 50, double durationScaling = 1, FrameColorTableMode colorTableMode = FrameColorTableMode.Local)
         {
             frameRate = Math.Min(frameRate, 50);
 
@@ -1356,7 +1371,7 @@ namespace VectSharp.Raster.ImageSharp
 
                     GifFrameMetadata frameMetadata = frame.Frames[0].Metadata.GetFormatMetadata(GifFormat.Instance);
                     frameMetadata.FrameDelay = gifFrameDuration;
-                    frameMetadata.DisposalMethod = GifDisposalMethod.RestoreToBackground;
+                    frameMetadata.DisposalMode = FrameDisposalMode.RestoreToBackground;
                     gifAnimation.Frames.AddFrame(frame.Frames[0]);
                 }
             }
@@ -1384,7 +1399,7 @@ namespace VectSharp.Raster.ImageSharp
         /// <param name="frameRate">The target frame rate of the animation, in frames-per-second (fps). This is capped by the animated GIF specification at 50 fps.</param>
         /// <param name="durationScaling">A scaling factor that will be applied to all durations in the animation. Values greater than 1 slow down the animation, values smaller than 1 accelerate it. Note that this does not affect the frame rate of the animation.</param>
         /// <param name="colorTableMode">Determines whether a single colour table should be used for the whole image, or if a different colour table should be used for each frame.</param>
-        public static void SaveAsAnimatedGIF(this Animation animation, Stream imageStream, double scale = 1, double frameRate = 50, double durationScaling = 1, GifColorTableMode colorTableMode = GifColorTableMode.Local)
+        public static void SaveAsAnimatedGIF(this Animation animation, Stream imageStream, double scale = 1, double frameRate = 50, double durationScaling = 1, FrameColorTableMode colorTableMode = FrameColorTableMode.Local)
         {
             Image gifAnimation = SaveAsAnimatedGIF(animation, scale, frameRate, durationScaling, colorTableMode);
 
@@ -1400,7 +1415,7 @@ namespace VectSharp.Raster.ImageSharp
         /// <param name="frameRate">The target frame rate of the animation, in frames-per-second (fps). This is capped by the animated GIF specification at 50 fps.</param>
         /// <param name="durationScaling">A scaling factor that will be applied to all durations in the animation. Values greater than 1 slow down the animation, values smaller than 1 accelerate it. Note that this does not affect the frame rate of the animation.</param>
         /// <param name="colorTableMode">Determines whether a single colour table should be used for the whole image, or if a different colour table should be used for each frame.</param>
-        public static void SaveAsAnimatedGIF(this Animation animation, string fileName, double scale = 1, double frameRate = 50, double durationScaling = 1, GifColorTableMode colorTableMode = GifColorTableMode.Local)
+        public static void SaveAsAnimatedGIF(this Animation animation, string fileName, double scale = 1, double frameRate = 50, double durationScaling = 1, FrameColorTableMode colorTableMode = FrameColorTableMode.Local)
         {
             using (FileStream fs = File.Create(fileName))
             {
